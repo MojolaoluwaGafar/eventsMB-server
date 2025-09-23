@@ -1,0 +1,84 @@
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const eventSchema= new Schema({
+    photo: {
+        type: String,
+        required : true,
+    },
+    title : {
+        type : String,
+        required: true,
+        trim : true,
+    },
+    date : {
+        type : Date,
+        required : true,
+    },
+    timeStart : {
+        type : String,
+        required : true,
+    },
+    timeEnd : {
+        type : String,
+        required : true,
+    },
+    location : {
+        type : String,
+        required : function (){
+            return this.online === false
+        },
+    },
+    online : {
+        type : Boolean,
+        default : false,
+    },
+    description : {
+        type :String,
+        required : true,
+        trim : true,
+    },
+    category : {
+     type : String,
+     enum : ["sports","party", "concert", "tech","religion", "education"],
+     required : true,  
+    },
+    tags : {
+        type : [String],
+        required : true
+    },
+    free: {
+        type : Boolean,
+        default : false,
+    },
+    regularEnabled : {
+        type : Boolean,
+        default : false
+    },
+    regular : {
+        type : Number,
+        required : function (){
+            return !this.free && this.regularEnabled
+        },
+        min : 0,
+    },
+    vipEnabled : {
+        type : Boolean,
+        default : false,
+    },
+    vip : {
+        type : Number,
+        required : function(){
+            return !this.free && this.vipEnabled
+        },
+        min : 0,
+    },
+    hostedBy : {
+        type : String,
+        required : true,
+    }
+},
+{timestamps : true}
+);
+
+module.exports = mongoose.model("Event", eventSchema)
