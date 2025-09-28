@@ -11,6 +11,11 @@ const eventSchema= new Schema({
         required: true,
         trim : true,
     },
+    hostName: {
+    type: String,
+    required: true,
+    trim: true,
+    },
     date : {
         type : Date,
         required : true,
@@ -73,10 +78,23 @@ const eventSchema= new Schema({
         },
         min : 0,
     },
-    hostedBy : {
-        type : String,
-        required : true,
-    }
+    hostedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    attendees: [
+        { 
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User" ,
+            required : true,
+        }
+    ]
 },
 {timestamps : true}
 );

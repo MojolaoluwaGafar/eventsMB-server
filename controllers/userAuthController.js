@@ -4,8 +4,8 @@ const bcrypt = require("bcryptjs")
 
 const { sendWelcomeEmail, sendNewsletter, sendResetPasswordEmail } = require("../emails/sendMail")
 
-const generateToken = (userId , email )=>{
-    const token = jwt.sign({userId, email}, process.env.JWT_SECRET, {expiresIn : "1d"});
+const generateToken = (userId , email, fullName )=>{
+    const token = jwt.sign({userId, email, fullName}, process.env.JWT_SECRET, {expiresIn : "1d"});
     console.log(token);
     
     return token;
@@ -69,8 +69,9 @@ exports.signIn = async (req,res) => {
         if (!isMatch) {
            return res.status(401).json({message : "Invalid credential"}) 
         }
-        const token =generateToken({userId : user._id, email : user.email})
-
+        const token =generateToken( user._id,user.email, user.fullName)
+        console.log("user signed in successfully");
+        
         res.status(200).json({
             message: "Signin successful",
             token,
