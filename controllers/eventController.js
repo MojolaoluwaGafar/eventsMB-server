@@ -114,7 +114,7 @@ const getAttendingEvents = async (req, res) => {
   }
 };
 
-const getPreviousEvents = async (req, res) => {
+const getPreviousEvents = async (req, res) => {z
   try {
     const userId = req.user.userId;
     const today = new Date();
@@ -141,6 +141,71 @@ const getAllEvents = async (req, res) => {
   }
 };
 
+// const getSearchEvents = async (req, res) => {
+//   try {
+//     const {
+//       query,
+//       location,
+//       category,
+//       tags,
+//       minPrice,
+//       maxPrice,
+//       page = 1,
+//       limit = 10,
+//     } = req.query;
+
+//     const filter = {};
+
+//     if (query) {
+//       const regex = { $regex: query, $options: "i" };
+//       filter.$or = [
+//         { title: regex },
+//         { description: regex },
+//         { category: regex },
+//         { location: regex },
+//         { tags: regex },
+//       ];
+//     }
+
+//     if (location) {
+//       filter.location = { $regex: location, $options: "i" };
+//     }
+
+//     if (category) {
+//       filter.category = { $regex: category, $options: "i" };
+//     }
+
+//     if (tags) {
+//       filter.tags = { $in: tags.split(",").map((tag) => new RegExp(tag, "i")) };
+//     }
+
+//     if (minPrice || maxPrice) {
+//       filter.$or = filter.$or || [];
+//       const priceFilter = {};
+//       if (minPrice) priceFilter.$gte = Number(minPrice);
+//       if (maxPrice) priceFilter.$lte = Number(maxPrice);
+//       filter.$or.push({ regular: priceFilter }, { vip: priceFilter });
+//     }
+
+//     const skip = (page - 1) * limit;
+
+//     const [events, total] = await Promise.all([
+//       EVENT.find(filter).skip(skip).limit(Number(limit)).sort({ date: 1 }),
+//       EVENT.countDocuments(filter),
+//     ]);
+
+//     res.status(200).json({
+//       events,
+//       total,
+//       page: Number(page),
+//       pages: Math.ceil(total / limit),
+//     });
+//   } catch (err) {
+//     console.error("Error fetching search events:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 const getSearchEvents = async (req, res) => {
   try {
     const {
@@ -154,38 +219,47 @@ const getSearchEvents = async (req, res) => {
       limit = 10,
     } = req.query;
 
-    const filter = {};
+    const andConditions = [];
 
     if (query) {
       const regex = { $regex: query, $options: "i" };
-      filter.$or = [
-        { title: regex },
-        { description: regex },
-        { category: regex },
-        { location: regex },
-        { tags: regex },
-      ];
+      andConditions.push({
+        $or: [
+          { title: regex },
+          { description: regex },
+          { category: regex },
+          { location: regex },
+          { tags: regex },
+        ],
+      });
     }
 
     if (location) {
-      filter.location = { $regex: location, $options: "i" };
+      andConditions.push({ location: { $regex: location, $options: "i" } });
     }
 
     if (category) {
-      filter.category = { $regex: category, $options: "i" };
+      andConditions.push({ category: { $regex: category, $options: "i" } });
     }
 
     if (tags) {
-      filter.tags = { $in: tags.split(",").map((tag) => new RegExp(tag, "i")) };
+      const tagsArray = tags.split(",").map((tag) => new RegExp(tag, "i"));
+      andConditions.push({ tags: { $in: tagsArray } });
     }
 
     if (minPrice || maxPrice) {
-      filter.$or = filter.$or || [];
-      const priceFilter = {};
-      if (minPrice) priceFilter.$gte = Number(minPrice);
-      if (maxPrice) priceFilter.$lte = Number(maxPrice);
-      filter.$or.push({ regular: priceFilter }, { vip: priceFilter });
+      const priceCondition = {
+        $or: [],
+      };
+      const priceRange = {};
+      if (minPrice) priceRange.$gte = Number(minPrice);
+      if (maxPrice) priceRange.$lte = Number(maxPrice);
+
+      priceCondition.$or.push({ regular: priceRange }, { vip: priceRange });
+      andConditions.push(priceCondition);
     }
+
+    const filter = andConditions.length > 0 ? { $and: andConditions } : {};
 
     const skip = (page - 1) * limit;
 
@@ -205,6 +279,7 @@ const getSearchEvents = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 module.exports = {
   createEvent,
