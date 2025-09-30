@@ -62,6 +62,11 @@ const createEvent = async (req, res) => {
       timeStart,
       timeEnd,
       location,
+      // location: "Lagos, Nigeria", // human-readable
+      locationCoords: {
+                        type: "Point",
+                        coordinates: [parseFloat(lng), parseFloat(lat)],
+                      },
       online: isOnline,
       description,
       category,
@@ -84,6 +89,62 @@ const createEvent = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+const getAllEvents = async (req, res) => {
+  try {
+    console.log("All events request received");
+    const events = await EVENT.find().sort({ date: 1 });
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("Error fetching all events:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getUpcomingEvents = async (req, res) => {
+  try {
+    console.log("Upcoming events request received");
+
+    const today = new Date();
+    const events = await EVENT.find({ date: { $gte: today } })
+      .sort({ date: 1 });
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("Error fetching upcoming events:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getNearbyEvents = async (req, res) => {
+  try {
+    const { lat, lng, radius = 25 } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: "Latitude and longitude required" });
+    }
+
+    const events = await EVENT.find({
+    locationCoords: {
+    $near: {
+      $geometry: {
+        type: "Point",
+        coordinates: [parseFloat(lng), parseFloat(lat)],
+      },
+      $maxDistance: radius * 1000,
+    },
+  },
+});
+
+
+    res.status(200).json({ events });
+  } catch (err) {
+    console.error("Error fetching nearby events:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 
 const getHostingEvents = async (req, res) => {
   console.log("Incoming hosting events request");
@@ -130,16 +191,6 @@ const getPreviousEvents = async (req, res) => {z
   }
 };
 
-const getAllEvents = async (req, res) => {
-  try {
-    console.log("All events request received");
-    const events = await EVENT.find().sort({ date: 1 });
-    res.status(200).json({ events });
-  } catch (err) {
-    console.error("Error fetching all events:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
 
 // const getSearchEvents = async (req, res) => {
 //   try {
@@ -246,6 +297,12 @@ const getSearchEvents = async (req, res) => {
       const tagsArray = tags.split(",").map((tag) => new RegExp(tag, "i"));
       andConditions.push({ tags: { $in: tagsArray } });
     }
+    if (req.query.price === "free") {
+  andConditions.push({ free: true });
+  }
+    if (req.query.price === "paid") {
+  andConditions.push({ free: false });
+   }
 
     if (minPrice || maxPrice) {
       const priceCondition = {
@@ -283,8 +340,10 @@ const getSearchEvents = async (req, res) => {
 
 module.exports = {
   createEvent,
-  getAttendingEvents,
+  getUpcomingEvents,
+  getNearbyEvents,
   getHostingEvents,
+  getAttendingEvents,
   getPreviousEvents,
   getAllEvents,
   getSearchEvents,
