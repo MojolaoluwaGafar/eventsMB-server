@@ -1,4 +1,5 @@
 const EVENT = require("../models/Event");
+const TICKET = require("../models/Ticket");
 const mongoose = require("mongoose");
 
 const createEvent = async (req, res) => {
@@ -63,10 +64,14 @@ const createEvent = async (req, res) => {
       timeEnd,
       location,
       // location: "Lagos, Nigeria", // human-readable
+      // locationCoords: {
+      //                   type: "Point",
+      //                   coordinates: [parseFloat(lng), parseFloat(lat)],
+      //                 },
       locationCoords: {
-                        type: "Point",
-                        coordinates: [parseFloat(lng), parseFloat(lat)],
-                      },
+  type: "Point",
+  coordinates: [3.3792, 6.5244], // Lagos as default example
+},
       online: isOnline,
       description,
       category,
@@ -97,6 +102,100 @@ const getAllEvents = async (req, res) => {
     res.status(200).json({ events });
   } catch (err) {
     console.error("Error fetching all events:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+const getHostingEvents = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    console.log("Fetching hosting events for:", userId);
+
+    // Find events hosted or created by the user
+    const events = await EVENT.find({
+      $or: [{ hostedBy: userId }, { createdBy: userId }]
+    }).populate("createdBy", "fullName email");
+
+    if (!events || events.length === 0) {
+      console.log("No events found for user:", userId);
+      return res.status(200).json({ success: true, events: [] });
+    }
+
+    console.log("Found events:", events.length);
+    return res.status(200).json({ success: true, events });
+  } catch (error) {
+    console.error("Error in getHostingEvents:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching hosting events"
+    });
+  }
+};
+
+
+
+const getAttendingEvents = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const tickets = await TICKET.find({ user: userId, status: "paid" }).populate("event");
+    const events = tickets.map((t) => t.event);
+    res.status(200).json({ events });
+  } catch (error) {
+    console.error("Error fetching attending events:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getPreviousEvents = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const today = new Date();
+
+    const hostedPast = await EVENT.find({
+      hostedBy: userId,
+      date: { $lt: today },
+    });
+
+    const attendedTickets = await TICKET.find({ user: userId, status: "paid" }).populate("event");
+    const attendedPast = attendedTickets
+      .filter((t) => new Date(t.event.date) < today)
+      .map((t) => t.event);
+
+    const uniqueEvents = [...new Map([...hostedPast, ...attendedPast].map(e => [e._id, e])).values()];
+
+    res.status(200).json({ events: uniqueEvents });
+  } catch (error) {
+    console.error("Error fetching previous events:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getPurchasedTickets = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const tickets = await TICKET.find({ user: userId }).populate("event");
+    res.status(200).json({ tickets });
+  } catch (error) {
+    console.error("Error fetching purchased tickets:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getSoldTickets = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const hostedEvents = await EVENT.find({ hostedBy: userId });
+    const hostedEventIds = hostedEvents.map((e) => e._id);
+
+    const soldTickets = await TICKET.find({ event: { $in: hostedEventIds }, status: "paid" })
+      .populate("user", "fullName email")
+      .populate("event", "title date");
+
+    res.status(200).json({ tickets: soldTickets });
+  } catch (error) {
+    console.error("Error fetching sold tickets:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -146,50 +245,50 @@ const getNearbyEvents = async (req, res) => {
 
 
 
-const getHostingEvents = async (req, res) => {
-  console.log("Incoming hosting events request");
+// const getHostingEvents = async (req, res) => {
+//   console.log("Incoming hosting events request");
 
-  try {
-    const userId = req.user.userId;
-    const events = await EVENT.find({ hostedBy: userId }).sort({ date: 1 });
+//   try {
+//     const userId = req.user.userId;
+//     const events = await EVENT.find({ hostedBy: userId }).sort({ date: 1 });
 
-    res.status(200).json({ events });
-  } catch (err) {
-    console.error("Error fetching hosting events:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//     res.status(200).json({ events });
+//   } catch (err) {
+//     console.error("Error fetching hosting events:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
-const getAttendingEvents = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const events = await EVENT.find({ attendees: userId })
-      .populate("hostedBy", "fullName email")
-      .populate("attendees", "fullName email")
-      .sort({ date: 1 });
+// const getAttendingEvents = async (req, res) => {
+//   try {
+//     const userId = req.user.userId;
+//     const events = await EVENT.find({ attendees: userId })
+//       .populate("hostedBy", "fullName email")
+//       .populate("attendees", "fullName email")
+//       .sort({ date: 1 });
 
-    res.status(200).json({ events });
-  } catch (error) {
-    console.error("Error fetching attending events:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//     res.status(200).json({ events });
+//   } catch (error) {
+//     console.error("Error fetching attending events:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
-const getPreviousEvents = async (req, res) => {z
-  try {
-    const userId = req.user.userId;
-    const today = new Date();
-    const events = await EVENT.find({
-      hostedBy: userId,
-      date: { $lt: today },
-    }).sort({ date: -1 });
+// const getPreviousEvents = async (req, res) => {z
+//   try {
+//     const userId = req.user.userId;
+//     const today = new Date();
+//     const events = await EVENT.find({
+//       hostedBy: userId,
+//       date: { $lt: today },
+//     }).sort({ date: -1 });
 
-    res.status(200).json({ events });
-  } catch (error) {
-    console.error("Error fetching previous events:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//     res.status(200).json({ events });
+//   } catch (error) {
+//     console.error("Error fetching previous events:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 
 // const getSearchEvents = async (req, res) => {
@@ -347,4 +446,6 @@ module.exports = {
   getPreviousEvents,
   getAllEvents,
   getSearchEvents,
+  getPurchasedTickets,
+  getSoldTickets,
 };
