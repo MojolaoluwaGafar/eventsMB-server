@@ -20,6 +20,10 @@ const userSchema = new Schema({
         required : [true, "Password is required"],
         minLength: [6, "minimum password length is 6"],
     },
+    isSubscribed: {
+        type: Boolean,
+        default: false,
+    },
     resetToken: String,
     resetTokenExpiry: Date,
     

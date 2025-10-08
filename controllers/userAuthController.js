@@ -138,47 +138,83 @@ exports.googleAuth = async (req, res) => {
   }
 };
 
-exports.subscribe = async (req,res) => {
-    console.log("incoming newsletter subscription");
-//     const { email } = req.body;
-//     console.log(req.body);
-//     try {
-//         if (!email) {
-//             return res.status(400).json({success : false, message : "Email is required"})
-//         }
-//         console.log("Preparing to send newsletter...");
+// exports.subscribe = async (req,res) => {
+//     console.log("incoming newsletter subscription");
+// //     const { email } = req.body;
+// //     console.log(req.body);
+// //     try {
+// //         if (!email) {
+// //             return res.status(400).json({success : false, message : "Email is required"})
+// //         }
+// //         console.log("Preparing to send newsletter...");
 
-//     await sendNewsletter({
-//        email
-//     })
-//     console.log("Newsletter sent successfully.");
+// //     await sendNewsletter({
+// //        email
+// //     })
+// //     console.log("Newsletter sent successfully.");
 
-//     res.status(200).json({success : true, message : "Thank you for subscribing!"})
-//     } catch (error) {
-//   console.error("Subscription error:", error);
-//   res.status(500).json({ error: "Failed to subscribe" });
+// //     res.status(200).json({success : true, message : "Thank you for subscribing!"})
+// //     } catch (error) {
+// //   console.error("Subscription error:", error);
+// //   res.status(500).json({ error: "Failed to subscribe" });
+// // }
+//   const { email } = req.body;
+
+//   if (!email) {
+//     return res.status(400).json({ error: "Email is required" });
+//   }
+
+  
+//     const html = `
+//       <h2>Welcome to MB Events Newsletter</h2>
+//       <p>Thanks for subscribing! You’ll now receive updates about our latest events and offers.</p>
+//     `;
+
+//   try {
+//     await sendEmail(email, "Welcome to MB Events!", html);
+
+//     res.status(200).json({ message: "Subscription successful" });
+//   } catch (err) {
+//     console.error("Email error:", err);
+//     res.status(500).json({ error: "Failed to subscribe" });
+//   }
 // }
+exports.subscribe = async (req, res) => {
+  console.log("incoming newsletter subscription");
   const { email } = req.body;
 
   if (!email) {
-    return res.status(400).json({ error: "Email is required" });
+    return res.status(400).json({ success: false, message: "Email is required" });
   }
-
-  
-    const html = `
-      <h2>Welcome to MB Events Newsletter</h2>
-      <p>Thanks for subscribing! You’ll now receive updates about our latest events and offers.</p>
-    `;
 
   try {
-    await sendEmail(email, "Welcome to MB Events!", html);
+    const existingUser = await USER.findOne({ email });
+    if (existingUser && existingUser.isSubscribed) {
+      return res.status(200).json({ success: true, message: "You are already subscribed!" });
+    }
 
-    res.status(200).json({ message: "Subscription successful" });
-  } catch (err) {
-    console.error("Email error:", err);
-    res.status(500).json({ error: "Failed to subscribe" });
+    await sendNewsletter({ email });
+
+    if (existingUser) {
+      existingUser.isSubscribed = true;
+      await existingUser.save();
+    }
+
+    console.log(`Newsletter sent successfully to ${email}`);
+    res.status(200).json({
+      success: true,
+      message: "Thank you for subscribing! A confirmation email has been sent to you.",
+    });
+  } catch (error) {
+    console.error(" Subscription error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process subscription. Please try again later.",
+      error: error.message,
+    });
   }
-}
+};
+
 
 exports.forgotPassword = async (req,res) => {
     console.log("Password reset request incoming");
