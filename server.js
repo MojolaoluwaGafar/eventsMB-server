@@ -8,7 +8,11 @@ const eventRouter = require("./routes/eventRouter")
 const paymentRoutes = require("./routes/paymentRouter");
 const contactRoute = require("./routes/contactRouter")
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+  origin: ["https://events-mb.vercel.app", "http://localhost:5173"],
+  credentials: true,
+}));
+
 
 //test route
 app.get("/", (req,res)=>{

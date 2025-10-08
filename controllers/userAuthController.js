@@ -1,3 +1,4 @@
+const axios = require("axios");
 const USER =require("../models/User")
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
@@ -118,9 +119,8 @@ exports.googleAuth = async (req, res) => {
       await user.save();
     }
 
-    const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "15m",
-    });
+    const jwtToken = generateToken(user._id, user.email, user.fullName, { expiresIn: "7d" });
+
 
     res.status(200).json({
       message: "Login successful",
