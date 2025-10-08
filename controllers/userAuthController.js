@@ -87,6 +87,56 @@ exports.signIn = async (req,res) => {
     }
 }
 
+exports.googleAuth = async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    // Get user info from Google
+    const response = await axios.get(
+      "https://www.googleapis.com/oauth2/v3/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const { email, name, email_verified } = response.data;
+
+    if (!email_verified) {
+      return res.status(400).json({ message: "Email not verified" });
+    }
+
+    let user = await USER.findOne({ email });
+
+    if (!user) {
+      user = new USER({
+        email,
+        fullName: name,
+        password: "",
+      });
+      await user.save();
+    }
+
+    const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
+
+    res.status(200).json({
+      message: "Login successful",
+      token: jwtToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+      },
+    });
+  } catch (error) {
+    console.error("Google sign-in error:", error.message);
+    res.status(500).json({ message: "Google login failed" });
+  }
+};
+
 exports.subscribe = async (req,res) => {
     console.log("incoming newsletter subscription");
     const { email } = req.body;
@@ -161,3 +211,12 @@ exports.resetPassword = async (req,res) => {
         return res.status(400).json({message : "Invalid or expired token"})
     }
 }
+// exports.updatePassword = async (req,res) => {
+//     console.log("incoming password update request");
+//     const { currentPassword, newPassword } = req.body;
+//     try {
+        
+//     } catch (error) {
+        
+//     }
+// }

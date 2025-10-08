@@ -113,7 +113,6 @@ const getHostingEvents = async (req, res) => {
 
     console.log("Fetching hosting events for:", userId);
 
-    // Find events hosted or created by the user
     const events = await EVENT.find({
       $or: [{ hostedBy: userId }, { createdBy: userId }]
     }).populate("createdBy", "fullName email");
@@ -133,8 +132,6 @@ const getHostingEvents = async (req, res) => {
     });
   }
 };
-
-
 
 const getAttendingEvents = async (req, res) => {
   try {
