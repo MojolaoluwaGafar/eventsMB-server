@@ -139,24 +139,44 @@ exports.googleAuth = async (req, res) => {
 
 exports.subscribe = async (req,res) => {
     console.log("incoming newsletter subscription");
-    const { email } = req.body;
-    console.log(req.body);
-    try {
-        if (!email) {
-            return res.status(400).json({success : false, message : "Email is required"})
-        }
-        console.log("Preparing to send newsletter...");
+//     const { email } = req.body;
+//     console.log(req.body);
+//     try {
+//         if (!email) {
+//             return res.status(400).json({success : false, message : "Email is required"})
+//         }
+//         console.log("Preparing to send newsletter...");
 
-    await sendNewsletter({
-       email
-    })
-    console.log("Newsletter sent successfully.");
+//     await sendNewsletter({
+//        email
+//     })
+//     console.log("Newsletter sent successfully.");
 
-    res.status(200).json({success : true, message : "Thank you for subscribing!"})
-    } catch (error) {
-  console.error("Subscription error:", error);
-  res.status(500).json({ error: "Failed to subscribe" });
-}
+//     res.status(200).json({success : true, message : "Thank you for subscribing!"})
+//     } catch (error) {
+//   console.error("Subscription error:", error);
+//   res.status(500).json({ error: "Failed to subscribe" });
+// }
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  const html = `
+    <h3>New Subscription</h3>
+    <p><strong>Email:</strong> ${email}</p>
+  `;
+
+  try {
+    await sendEmail(process.env.RECEIVER_EMAIL, "New Email Subscriber", html);
+    res
+      .status(200)
+      .json({ success: true, message: "Thank you for subscribing!" });
+  } catch (err) {
+    console.error("Email error:", err);
+    res.status(500).json({ error: "Failed to subscribe" });
+  }
 }
 
 exports.forgotPassword = async (req,res) => {
