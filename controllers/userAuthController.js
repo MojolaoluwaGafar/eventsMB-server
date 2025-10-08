@@ -163,16 +163,16 @@ exports.subscribe = async (req,res) => {
     return res.status(400).json({ error: "Email is required" });
   }
 
-  const html = `
-    <h3>New Subscription</h3>
-    <p><strong>Email:</strong> ${email}</p>
-  `;
+  
+    const html = `
+      <h2>Welcome to MB Events Newsletter</h2>
+      <p>Thanks for subscribing! You’ll now receive updates about our latest events and offers.</p>
+    `;
 
   try {
-    await sendEmail(process.env.RECEIVER_EMAIL, "New Email Subscriber", html);
-    res
-      .status(200)
-      .json({ success: true, message: "Thank you for subscribing!" });
+    await sendEmail(email, "Welcome to MB Events!", html);
+
+    res.status(200).json({ message: "Subscription successful" });
   } catch (err) {
     console.error("Email error:", err);
     res.status(500).json({ error: "Failed to subscribe" });
