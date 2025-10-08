@@ -6,7 +6,7 @@ const mongoose = require("mongoose")
 const userAuthRouter = require("./routes/userAuthRouter")
 const eventRouter = require("./routes/eventRouter")
 const paymentRoutes = require("./routes/paymentRouter");
-
+const contactRoute = require("./routes/contactRouter")
 app.use(express.json())
 app.use(cors())
 
@@ -18,7 +18,7 @@ app.get("/", (req,res)=>{
 app.use("/api/user/auth",userAuthRouter)
 app.use("/api/user/events",eventRouter)
 app.use("/api/payments", paymentRoutes);
-
+app.use("/api/contact", contactRoute)
 
 const startServer = async () => {
     try {

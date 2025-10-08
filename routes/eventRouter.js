@@ -11,7 +11,7 @@ router.get("/nearby", getNearbyEvents);
 router.get("/search", getSearchEvents);
 // router.get("/hosting/:userId", auth, getHostingEvents);
 router.get("/hosting/:userId", auth, (req, res, next) => {
-  console.log("🔥 /hosting route hit with userId:", req.params.userId);
+  console.log("/hosting route hit with userId:", req.params.userId);
   next();
 }, getHostingEvents);
 
