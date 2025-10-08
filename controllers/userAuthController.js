@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 
 const { sendWelcomeEmail, sendNewsletter, sendResetPasswordEmail } = require("../emails/sendMail")
+const { sendEmail } = require("../emails/sendEmail")
 
 const generateToken = (userId , email, fullName )=>{
     const token = jwt.sign({userId, email, fullName}, process.env.JWT_SECRET, {expiresIn : "1d"});
