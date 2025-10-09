@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 
 const { sendWelcomeEmail, sendNewsletter, sendResetPasswordEmail } = require("../emails/sendMail")
-const { sendEmail } = require("../emails/sendEmail")
 
 const generateToken = (userId , email, fullName )=>{
     const token = jwt.sign({userId, email, fullName}, process.env.JWT_SECRET, {expiresIn : "1d"});
@@ -179,8 +178,43 @@ exports.googleAuth = async (req, res) => {
 //     res.status(500).json({ error: "Failed to subscribe" });
 //   }
 // }
+// exports.subscribe = async (req, res) => {
+//   console.log("incoming newsletter subscription");
+//   const { email } = req.body;
+
+//   if (!email) {
+//     return res.status(400).json({ success: false, message: "Email is required" });
+//   }
+
+//   try {
+//     const existingUser = await USER.findOne({ email });
+//     if (existingUser && existingUser.isSubscribed) {
+//       return res.status(200).json({ success: true, message: "You are already subscribed!" });
+//     }
+
+//     await sendNewsletter({ email });
+
+//     if (existingUser) {
+//       existingUser.isSubscribed = true;
+//       await existingUser.save();
+//     }
+
+//     console.log(`Newsletter sent successfully to ${email}`);
+//     res.status(200).json({
+//       success: true,
+//       message: "Thank you for subscribing! A confirmation email has been sent to you.",
+//     });
+//   } catch (error) {
+//     console.error(" Subscription error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to process subscription. Please try again later.",
+//       error: error.message,
+//     });
+//   }
+// };
 exports.subscribe = async (req, res) => {
-  console.log("incoming newsletter subscription");
+  console.log("Incoming newsletter subscription");
   const { email } = req.body;
 
   if (!email) {
@@ -190,7 +224,10 @@ exports.subscribe = async (req, res) => {
   try {
     const existingUser = await USER.findOne({ email });
     if (existingUser && existingUser.isSubscribed) {
-      return res.status(200).json({ success: true, message: "You are already subscribed!" });
+      return res.status(200).json({
+        success: true,
+        message: "You are already subscribed!",
+      });
     }
 
     await sendNewsletter({ email });
@@ -203,14 +240,13 @@ exports.subscribe = async (req, res) => {
     console.log(`Newsletter sent successfully to ${email}`);
     res.status(200).json({
       success: true,
-      message: "Thank you for subscribing! A confirmation email has been sent to you.",
+      message: "Thank you for subscribing! A confirmation email has been sent.",
     });
   } catch (error) {
-    console.error(" Subscription error:", error);
+    console.error("Subscription error:", error.message);
     res.status(500).json({
       success: false,
       message: "Failed to process subscription. Please try again later.",
-      error: error.message,
     });
   }
 };
