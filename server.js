@@ -7,6 +7,9 @@ const userAuthRouter = require("./routes/userAuthRouter")
 const eventRouter = require("./routes/eventRouter")
 const paymentRoutes = require("./routes/paymentRouter");
 const contactRoute = require("./routes/contactRouter")
+const ticketRoutes = require("./routes/ticketRouter");
+
+
 app.use(express.json())
 app.use(cors({
   origin: ["https://events-mb.vercel.app", "http://localhost:5173"],
@@ -18,10 +21,10 @@ app.use(cors({
 app.get("/", (req,res)=>{
     res.status(200).json({success : true, message:"MB events server"})
 });
-
 app.use("/api/user/auth",userAuthRouter)
 app.use("/api/user/events",eventRouter)
 app.use("/api/payments", paymentRoutes);
+app.use("/api/tickets", ticketRoutes);
 app.use("/api/contact", contactRoute)
 
 const startServer = async () => {
